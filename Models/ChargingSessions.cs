@@ -1,32 +1,32 @@
 namespace EvCharging.Models;
 
 /// <summary>
-/// Representa uma sessão de carregamento de veículo elétrico.
+/// This represents an electric vehicle charging session.
 /// </summary>
 public class ChargingSession
 {
     /// <summary>
-    /// Identificador da estação de carregamento.
+    /// Charging station identifier.
     /// </summary>
     public string StationId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Indica se a estação está carregando.
+    /// Indicates whether the station is charging.
     /// </summary>
     public bool IsCharging { get; set; }
 
     /// <summary>
-    /// Potência em kW fornecida pela estação.
+    /// Power in kW supplied by the station.
     /// </summary>
     public double PowerKw { get; set; }
 
     /// <summary>
-    /// Data e hora de início da sessão.
+    /// Start date and time of the session.
     /// </summary>
     public DateTime StartTime { get; set; }
 
     /// <summary>
-    /// Data e hora de fim da sessão (quando parada).
+    /// End date and time of the session (when stopped).
     /// </summary>
     public DateTime? EndTime { get; set; }
 }

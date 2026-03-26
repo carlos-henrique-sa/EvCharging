@@ -6,14 +6,8 @@ namespace EvCharging.Controllers;
 
 [ApiController]
 [Route("charging")]
-public class ChargingController : ControllerBase
+public class ChargingController(IChargingService _service) : ControllerBase
 {
-    private readonly IChargingService _service;
-
-    public ChargingController(IChargingService service)
-    {
-        _service = service;
-    }
 
     [HttpGet]
     public IActionResult GetAll()
@@ -48,7 +42,7 @@ public class ChargingController : ControllerBase
             return BadRequest("StationId is required.");
 
         if (_service.AlreadyCharging(stationId)) {
-            return Conflict($"Estação '{stationId}' já está carregando.");
+            return Conflict($"Station '{stationId}' is already charging.");
         }
 
         _service.TryStart(stationId, out var session);
