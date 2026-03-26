@@ -47,26 +47,6 @@ public interface IChargingService
     /// </summary>
     bool TryGet(string stationId, out ChargingSession session);
 
-    // OCPP simulation methods
 
-    /// <summary>
-    /// Registra um carregador OCPP (charge point).
-    /// </summary>
-    OcppChargePoint RegisterOcppChargePoint(string stationId, string vendor, string model);
-
-    /// <summary>
-    /// Obtém o status OCPP de um carregador.
-    /// </summary>
-    OcppStatus? GetOcppStatus(string stationId);
-
-    /// <summary>
-    /// Recebe atualização de status do carregador via OCPP.
-    /// </summary>
-    OcppStatus UpdateOcppStatus(string stationId, OcppStatusUpdateRequest statusUpdate);
-
-    /// <summary>
-    /// Envia comando OCPP para o carregador.
-    /// </summary>
-    OcppCommandRequest SendOcppCommand(string stationId, OcppCommandRequest command);
     bool AlreadyCharging(string stationId);
 }
