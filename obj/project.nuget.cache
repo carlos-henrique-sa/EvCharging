@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "OfAx0AIaxLg=",
+  "dgSpecHash": "32EeBncn7h4=",
   "success": true,
-  "projectFilePath": "C:\\dev\\EvCharging\\EvCharging.csproj",
+  "projectFilePath": "C:\\Users\\user\\Documents\\projects\\EvCharging\\EvCharging.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\subscx2\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",
-    "C:\\Users\\subscx2\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+    "C:\\Users\\user\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",
+    "C:\\Users\\user\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
   ],
   "logs": []
 }

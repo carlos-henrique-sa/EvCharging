@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\dev\\EvCharging\\EvCharging.csproj": {}
+    "C:\\Users\\user\\Documents\\projects\\EvCharging\\EvCharging.csproj": {}
   },
   "projects": {
-    "C:\\dev\\EvCharging\\EvCharging.csproj": {
+    "C:\\Users\\user\\Documents\\projects\\EvCharging\\EvCharging.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\dev\\EvCharging\\EvCharging.csproj",
+        "projectUniqueName": "C:\\Users\\user\\Documents\\projects\\EvCharging\\EvCharging.csproj",
         "projectName": "EvCharging",
-        "projectPath": "C:\\dev\\EvCharging\\EvCharging.csproj",
-        "packagesPath": "C:\\Users\\subscx2\\.nuget\\packages\\",
-        "outputPath": "C:\\dev\\EvCharging\\obj\\",
+        "projectPath": "C:\\Users\\user\\Documents\\projects\\EvCharging\\EvCharging.csproj",
+        "packagesPath": "C:\\Users\\user\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\user\\Documents\\projects\\EvCharging\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\subscx2\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\user\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
