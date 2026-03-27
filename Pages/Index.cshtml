@@ -1,27 +1,97 @@
 @page
-<h1>EV Charging Dashboard</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EV Charging Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            padding: 30px;
+        }
 
-<input id="stationId" value="ABC123" />
+        h1 {
+            margin-bottom: 20px;
+        }
 
-<br><br>
+        .card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
 
-<button onclick="register()">Register</button>
-<button onclick="start()">Start</button>
-<button onclick="stop()">Stop</button>
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            width: 200px;
+        }
 
-<pre id="status"></pre>
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-register { background: #3b82f6; color: white; }
+        .btn-start { background: #22c55e; color: black; }
+        .btn-stop { background: #ef4444; color: white; }
+
+        .device {
+            background: #334155;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px;
+            width: 200px;
+        }
+
+        .green { color: #22c55e; }
+        .red { color: #ef4444; }
+        .yellow { color: #facc15; }
+    </style>
+</head>
+<body>
+
+<h1>⚡ EV Charging Dashboard</h1>
+
+<!-- CONTROLE MANUAL -->
+<div class="card">
+    <h3>Controle</h3>
+    <input id="stationId" value="ABC123" />
+    <br><br>
+
+    <button class="btn-register" onclick="register()">Register</button>
+    <button class="btn-start" onclick="start()">Start</button>
+    <button class="btn-stop" onclick="stop()">Stop</button>
+</div>
+
+<!-- LISTA DE DISPOSITIVOS -->
+<div class="card">
+    <h3>Dispositivos</h3>
+    <div id="devices" style="display:flex; flex-wrap:wrap;"></div>
+</div>
 
 <script>
+const stations = [];
+
 function getId() {
     return document.getElementById("stationId").value;
 }
 
 async function register() {
-    await fetch(
-        `/charging/${getId()}/ocpp/register?vendor=Test&model=Sim`,
-        { method: 'POST' }
-    );
-    load();
+    await fetch(`/charging/${getId()}/ocpp/register?vendor=Test&model=Sim`, {
+        method: 'POST'
+    });
+
+    if (!stations.includes(getId())) {
+        stations.push(getId());
+    }
+
+    loadAll();
 }
 
 async function start() {
@@ -30,7 +100,8 @@ async function start() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'startCharging' })
     });
-    load();
+
+    loadAll();
 }
 
 async function stop() {
@@ -39,14 +110,57 @@ async function stop() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'stopCharging' })
     });
-    load();
+
+    loadAll();
 }
 
-async function load() {
-    const res = await fetch(`/charging`);
-    const data = await res.json();
-    document.getElementById("status").innerText = JSON.stringify(data, null, 2);
+async function loadAll() {
+    const container = document.getElementById("devices");
+    container.innerHTML = "";
+
+    for (const id of stations) {
+
+        let ocppText = "Not registered";
+        let sessionText = "No session";
+
+        // OCPP
+        try {
+            const ocppRes = await fetch(`/charging/${id}/ocpp/status`);
+            const ocpp = await ocppRes.json();
+
+            let color = "yellow";
+            if (ocpp.isCharging) color = "green";
+            if (ocpp.status === "Faulted") color = "red";
+
+            ocppText = `<span class="${color}">${ocpp.status}</span>`;
+        } catch {}
+
+        // SESSION
+        try {
+            const res = await fetch(`/charging/${id}`);
+            const session = await res.json();
+
+            if (session.isCharging) {
+                sessionText = `<span class="green">Charging</span>`;
+            } else {
+                sessionText = `<span class="red">Stopped</span>`;
+            }
+        } catch {}
+
+        container.innerHTML += `
+            <div class="device">
+                <b>${id}</b><br/><br/>
+                OCPP: ${ocppText}<br/>
+                Session: ${sessionText}
+            </div>
+        `;
+    }
 }
 
-setInterval(load, 2000);
+// auto refresh
+setInterval(loadAll, 2000);
+loadAll();
 </script>
+
+</body>
+</html>
