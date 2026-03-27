@@ -10,8 +10,10 @@ builder.Logging.AddConsole();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IChargingService, ChargingService>();
-
+builder.Services.AddSingleton<IChargingOcppService, ChargingOcppService>();
+builder.Services.AddRazorPages();
 var app = builder.Build();
+
 
 // Middleware de tratamento global de erros
 app.UseExceptionHandler(errorApp =>
@@ -31,5 +33,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 app.UseHttpsRedirection();
+
+app.MapRazorPages();
 
 app.Run();

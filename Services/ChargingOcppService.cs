@@ -6,12 +6,11 @@ namespace EvCharging.Services;
 /// <summary>
 /// Service responsible for managing OCPP interactions.
 /// </summary>
-public class ChargingOcppService : IChargingOcppService
+public class ChargingOcppService(IChargingService _chargingService) : IChargingOcppService
 {
     private readonly ConcurrentDictionary<string, OcppChargePoint> _ocppChargePoints = new();
     private readonly ConcurrentDictionary<string, OcppStatus> _ocppStatuses = new();
 
-   
     /// <inheritdoc/>
     public OcppChargePoint RegisterOcppChargePoint(string stationId, string vendor, string model)
     {
@@ -72,9 +71,9 @@ public class ChargingOcppService : IChargingOcppService
         _ocppStatuses[stationId] = newStatus;
 
         if (statusUpdate.IsCharging)
-            Start(stationId);
+            _chargingService.Start(stationId);
         else
-            Stop(stationId);
+            _chargingService.Stop(stationId);
 
         return newStatus;
     }
@@ -95,7 +94,7 @@ public class ChargingOcppService : IChargingOcppService
         switch (command.Action.ToLowerInvariant())
         {
             case "startcharging":
-                Start(stationId);
+                _chargingService.Start(stationId);
                 _ocppStatuses[stationId] = new OcppStatus
                 {
                     StationId = stationId,
@@ -106,7 +105,7 @@ public class ChargingOcppService : IChargingOcppService
                 };
                 break;
             case "stopcharging":
-                Stop(stationId);
+                _chargingService.Stop(stationId);
                 _ocppStatuses[stationId] = new OcppStatus
                 {
                     StationId = stationId,

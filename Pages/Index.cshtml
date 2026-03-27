@@ -1,0 +1,52 @@
+@page
+<h1>EV Charging Dashboard</h1>
+
+<input id="stationId" value="ABC123" />
+
+<br><br>
+
+<button onclick="register()">Register</button>
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
+
+<pre id="status"></pre>
+
+<script>
+function getId() {
+    return document.getElementById("stationId").value;
+}
+
+async function register() {
+    await fetch(
+        `/charging/${getId()}/ocpp/register?vendor=Test&model=Sim`,
+        { method: 'POST' }
+    );
+    load();
+}
+
+async function start() {
+    await fetch(`/charging/${getId()}/ocpp/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'startCharging' })
+    });
+    load();
+}
+
+async function stop() {
+    await fetch(`/charging/${getId()}/ocpp/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stopCharging' })
+    });
+    load();
+}
+
+async function load() {
+    const res = await fetch(`/charging`);
+    const data = await res.json();
+    document.getElementById("status").innerText = JSON.stringify(data, null, 2);
+}
+
+setInterval(load, 2000);
+</script>
