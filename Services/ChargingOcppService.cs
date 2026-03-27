@@ -10,13 +10,11 @@ public class ChargingOcppService(IChargingService _chargingService) : IChargingO
 {
     private readonly ConcurrentDictionary<string, OcppChargePoint> _ocppChargePoints = new();
     private readonly ConcurrentDictionary<string, OcppStatus> _ocppStatuses = new();
+    public IEnumerable<string> GetAllRegisteredStations() => _ocppChargePoints.Keys;
 
     /// <inheritdoc/>
     public OcppChargePoint RegisterOcppChargePoint(string stationId, string vendor, string model)
     {
-        if (string.IsNullOrWhiteSpace(stationId))
-            throw new ArgumentException("stationId is required", nameof(stationId));
-
         var chargePoint = new OcppChargePoint
         {
             StationId = stationId,
@@ -25,7 +23,11 @@ public class ChargingOcppService(IChargingService _chargingService) : IChargingO
             RegisteredAtUtc = DateTime.UtcNow
         };
 
-        _ocppChargePoints[stationId] = chargePoint;
+        if (!_ocppChargePoints.TryAdd(stationId, chargePoint))
+        {
+            throw new InvalidOperationException($"Charge point '{stationId}' already registered.");
+        }
+
         _ocppStatuses[stationId] = new OcppStatus
         {
             StationId = stationId,
@@ -53,8 +55,7 @@ public class ChargingOcppService(IChargingService _chargingService) : IChargingO
         if (string.IsNullOrWhiteSpace(stationId))
             throw new ArgumentException("stationId is required", nameof(stationId));
 
-        if (statusUpdate == null)
-            throw new ArgumentNullException(nameof(statusUpdate));
+        ArgumentNullException.ThrowIfNull(statusUpdate);
 
         if (!_ocppChargePoints.ContainsKey(stationId))
             throw new InvalidOperationException($"Charge point '{stationId}' is not registered.");
@@ -84,13 +85,11 @@ public class ChargingOcppService(IChargingService _chargingService) : IChargingO
         if (string.IsNullOrWhiteSpace(stationId))
             throw new ArgumentException("stationId is required", nameof(stationId));
 
-        if (command == null)
-            throw new ArgumentNullException(nameof(command));
+        ArgumentNullException.ThrowIfNull(command);
 
         if (!_ocppChargePoints.ContainsKey(stationId))
             throw new InvalidOperationException($"Charge point '{stationId}' is not registered.");
 
-        // Simulação: processa comando local e altera estado conforme need
         switch (command.Action.ToLowerInvariant())
         {
             case "startcharging":

@@ -15,8 +15,15 @@ public class ChargingOcppController(IChargingOcppService _service) : ControllerB
         if (string.IsNullOrWhiteSpace(stationId))
             return BadRequest("StationId is required.");
 
-        var chargePoint = _service.RegisterOcppChargePoint(stationId, vendor ?? "Unknown", model ?? "Unknown");
-        return Ok(chargePoint);
+        try
+        {
+            var chargePoint = _service.RegisterOcppChargePoint(stationId, vendor ?? "Unknown", model ?? "Unknown");
+            return Ok(chargePoint);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        } 
     }
 
     [HttpGet("{stationId}/ocpp/status")]

@@ -1,21 +1,27 @@
+using EvCharging.Hubs;
 using EvCharging.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração de logging para produção
+// Configuração de logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-// Serviços
+// ==================== SERVIÇOS ====================
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddRazorPages();
+
+// === SIGNALR ===
+builder.Services.AddSignalR();                    // ← ESSA LINHA ESTAVA FALTANDO
+
+// Seus serviços existentes
 builder.Services.AddSingleton<IChargingService, ChargingService>();
 builder.Services.AddSingleton<IChargingOcppService, ChargingOcppService>();
-builder.Services.AddRazorPages();
+
 var app = builder.Build();
 
-
-// Middleware de tratamento global de erros
+// ==================== MIDDLEWARE ====================
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -31,9 +37,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// ==================== ENDPOINTS ====================
+app.MapHub<ChargingHub>("/chargingHub");     // Agora vai funcionar
+
 app.MapControllers();
 app.UseHttpsRedirection();
-
 app.MapRazorPages();
 
 app.Run();

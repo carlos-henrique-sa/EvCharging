@@ -7,21 +7,6 @@ namespace EvCharging.Controllers;
 [Route("charging")]
 public class ChargingController(IChargingService _service) : ControllerBase
 {
-
-    [HttpGet]
-    public IActionResult GetAll()
-    {
-        var sessions = _service.GetAll();
-        return Ok(sessions);
-    }
-
-    [HttpGet("active")]
-    public IActionResult GetActive()
-    {
-        var sessions = _service.GetActive();
-        return Ok(sessions);
-    }
-
     [HttpGet("{stationId}")]
     public IActionResult Get(string stationId)
     {

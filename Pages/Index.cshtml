@@ -30,8 +30,8 @@
         }
 
         button {
-            padding: 10px 15px;
-            margin: 5px;
+            padding: 8px 12px;
+            margin-top: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -46,120 +46,195 @@
             padding: 15px;
             border-radius: 8px;
             margin: 10px;
-            width: 200px;
+            width: 240px;
         }
 
         .green { color: #22c55e; }
         .red { color: #ef4444; }
         .yellow { color: #facc15; }
+
+        .status { font-weight: bold; }
     </style>
 </head>
 <body>
 
 <h1>⚡ EV Charging Dashboard</h1>
 
-<!-- CONTROLE MANUAL -->
+<!-- CONTROLE PARA REGISTRAR -->
 <div class="card">
-    <h3>Controle</h3>
-    <input id="stationId" value="ABC123" />
+    <h3>Registrar estação</h3>
+    <input id="stationId" value="ABC123" placeholder="Station ID" />
     <br><br>
-
-    <button class="btn-register" onclick="register()">Register</button>
-    <button class="btn-start" onclick="start()">Start</button>
-    <button class="btn-stop" onclick="stop()">Stop</button>
+    <button class="btn-register" onclick="register()">Registrar</button>
 </div>
 
 <!-- LISTA DE DISPOSITIVOS -->
 <div class="card">
-    <h3>Dispositivos</h3>
+    <h3>Dispositivos Conectados</h3>
     <div id="devices" style="display:flex; flex-wrap:wrap;"></div>
 </div>
 
+<!-- SignalR Client -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/9.0.6/signalr.min.js"></script>
+
 <script>
 const stations = [];
+let connection = null;
 
 function getId() {
-    return document.getElementById("stationId").value;
+    return document.getElementById("stationId").value.trim();
 }
 
-async function register() {
-    await fetch(`/charging/${getId()}/ocpp/register?vendor=Test&model=Sim`, {
-        method: 'POST'
+// ==================== SIGNALR SETUP ====================
+async function startSignalR() {
+    connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chargingHub")
+        .withAutomaticReconnect()
+        .build();
+
+    // Recebe atualizações em tempo real do servidor
+    connection.on("StatusUpdated", (data) => {
+        console.log("Status atualizado via SignalR:", data);
+        updateDeviceUI(data.stationId, data.ocppStatus, data.session);
     });
 
-    if (!stations.includes(getId())) {
-        stations.push(getId());
+    connection.on("Error", (message) => {
+        console.error("SignalR Error:", message);
+        alert("Erro: " + message);
+    });
+
+    try {
+        await connection.start();
+        console.log("✅ SignalR conectado com sucesso!");
+        loadAll();                     // carrega inicial após conectar
+    } catch (err) {
+        console.error("Falha ao conectar SignalR:", err);
+        setTimeout(startSignalR, 5000); // tenta reconectar
+    }
+}
+
+// ==================== REGISTER ====================
+async function register() {
+    const id = getId();
+    if (!id) {
+        alert("Informe um Station ID!");
+        return;
     }
 
-    loadAll();
+    if (stations.includes(id)) {
+        alert("Estação já registrada!");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/charging/${id}/ocpp/register?vendor=Test&model=Sim`,
+            { method: 'POST' }
+        );
+
+        if (response.ok) {
+            stations.push(id);
+            alert(`Estação ${id} registrada com sucesso!`);
+            loadAll();
+        } else {
+            const error = await response.text();
+            alert("Erro ao registrar: " + error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Erro de conexão ao registrar.");
+    }
 }
 
-async function start() {
-    await fetch(`/charging/${getId()}/ocpp/command`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'startCharging' })
-    });
-
-    loadAll();
+// ==================== START / STOP (via SignalR) ====================
+async function start(id) {
+    if (!connection) return;
+    try {
+        await connection.invoke("SendCommand", id, "startCharging");
+    } catch (err) {
+        console.error(err);
+    }
 }
 
-async function stop() {
-    await fetch(`/charging/${getId()}/ocpp/command`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'stopCharging' })
-    });
-
-    loadAll();
+async function stop(id) {
+    if (!connection) return;
+    try {
+        await connection.invoke("SendCommand", id, "stopCharging");
+    } catch (err) {
+        console.error(err);
+    }
 }
 
+// ==================== ATUALIZAÇÃO PARCIAL DO UI ====================
+function updateDeviceUI(stationId, ocppStatus, session) {
+    const container = document.getElementById("devices");
+    let deviceDiv = document.getElementById(`device-${stationId}`);
+
+    if (!deviceDiv) {
+        // Se não existir ainda, cria o card
+        deviceDiv = document.createElement("div");
+        deviceDiv.id = `device-${stationId}`;
+        deviceDiv.className = "device";
+        container.appendChild(deviceDiv);
+    }
+
+    let ocppText = "Not registered";
+    let sessionText = "Nenhuma sessão";
+    let actionButton = "";
+
+    if (ocppStatus) {
+        let color = "yellow";
+        if (ocppStatus.isCharging) color = "green";
+        if (ocppStatus.status === "Faulted") color = "red";
+
+        ocppText = `<span class="${color} status">${ocppStatus.status}</span>`;
+
+        if (ocppStatus.isCharging) {
+            actionButton = `<button class="btn-stop" onclick="stop('${stationId}')">Parar</button>`;
+        } else {
+            actionButton = `<button class="btn-start" onclick="start('${stationId}')">Iniciar</button>`;
+        }
+    }
+
+    if (session) {
+        sessionText = session.isCharging 
+            ? `<span class="green status">Carregando</span>` 
+            : `<span class="red status">Parado</span>`;
+    }
+
+    deviceDiv.innerHTML = `
+        <b>${stationId}</b><br/><br/>
+        OCPP: ${ocppText}<br/>
+        Sessão: ${sessionText}<br/><br/>
+        ${actionButton}
+    `;
+}
+
+// ==================== LOAD ALL (inicial) ====================
 async function loadAll() {
     const container = document.getElementById("devices");
     container.innerHTML = "";
 
     for (const id of stations) {
-
-        let ocppText = "Not registered";
-        let sessionText = "No session";
-
-        // OCPP
+        // Busca inicial via REST (só na primeira carga)
         try {
             const ocppRes = await fetch(`/charging/${id}/ocpp/status`);
-            const ocpp = await ocppRes.json();
+            const ocppStatus = ocppRes.ok ? await ocppRes.json() : null;
 
-            let color = "yellow";
-            if (ocpp.isCharging) color = "green";
-            if (ocpp.status === "Faulted") color = "red";
+            const sessionRes = await fetch(`/charging/${id}`);
+            const session = sessionRes.ok ? await sessionRes.json() : null;
 
-            ocppText = `<span class="${color}">${ocpp.status}</span>`;
-        } catch {}
-
-        // SESSION
-        try {
-            const res = await fetch(`/charging/${id}`);
-            const session = await res.json();
-
-            if (session.isCharging) {
-                sessionText = `<span class="green">Charging</span>`;
-            } else {
-                sessionText = `<span class="red">Stopped</span>`;
-            }
-        } catch {}
-
-        container.innerHTML += `
-            <div class="device">
-                <b>${id}</b><br/><br/>
-                OCPP: ${ocppText}<br/>
-                Session: ${sessionText}
-            </div>
-        `;
+            updateDeviceUI(id, ocppStatus, session);
+        } catch (e) {
+            console.warn(`Erro ao carregar ${id}`, e);
+        }
     }
 }
 
-// auto refresh
-setInterval(loadAll, 2000);
-loadAll();
+// ==================== INICIALIZAÇÃO ====================
+window.onload = () => {
+    startSignalR();
+};
 </script>
 
 </body>

@@ -24,4 +24,9 @@ public interface IChargingOcppService
     /// Send an OCPP command to the charger.
     /// </summary>
     OcppCommandRequest SendOcppCommand(string stationId, OcppCommandRequest command);
+
+    /// <summary>     
+    /// Get all registered OCPP stations.
+    /// </summary>
+    IEnumerable<string> GetAllRegisteredStations();
 }

@@ -38,7 +38,7 @@ public class ChargingService : IChargingService
             throw new ArgumentException("stationId is required", nameof(stationId));
 
         if (!_sessions.TryGetValue(stationId, out var existing))
-            return null;
+            return null!;
 
         if (!existing.IsCharging)
             return existing;
@@ -56,12 +56,6 @@ public class ChargingService : IChargingService
 
         return _sessions.TryGetValue(stationId, out var session) ? session : null!;
     }
-
-    /// <inheritdoc/>
-    public IEnumerable<ChargingSession> GetAll() => _sessions.Values;
-
-    /// <inheritdoc/>
-    public IEnumerable<ChargingSession> GetActive() => _sessions.Values.Where(s => s.IsCharging);
 
     /// <inheritdoc/>
     public bool TryStart(string stationId, out ChargingSession session)
