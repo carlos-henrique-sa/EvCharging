@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using EvCharging.Models;
 using EvCharging.Services;
 
 namespace EvCharging.Controllers;
