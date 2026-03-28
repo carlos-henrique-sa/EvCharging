@@ -95,6 +95,18 @@ async function startSignalR() {
     // Recebe atualizações em tempo real do servidor
     connection.on("StatusUpdated", (data) => {
         console.log("Status atualizado via SignalR:", data);
+        if (data?.stationId && !stations.includes(data.stationId)) {
+            stations.push(data.stationId);
+        }
+        updateDeviceUI(data.stationId, data.ocppStatus, data.session);
+    });
+
+    connection.on("StationRegistered", (data) => {
+        console.log("Nova estação registrada via SignalR:", data);
+        if (!data?.stationId) return;
+        if (!stations.includes(data.stationId)) {
+            stations.push(data.stationId);
+        }
         updateDeviceUI(data.stationId, data.ocppStatus, data.session);
     });
 
@@ -106,7 +118,7 @@ async function startSignalR() {
     try {
         await connection.start();
         console.log("✅ SignalR conectado com sucesso!");
-        loadAll();                     // carrega inicial após conectar
+        await loadAll();                 // carrega inicial após conectar
     } catch (err) {
         console.error("Falha ao conectar SignalR:", err);
         setTimeout(startSignalR, 5000); // tenta reconectar
@@ -121,7 +133,7 @@ async function register() {
         return;
     }
 
-    if (stations.includes(id)) {
+    if (stations.includes(id) || document.getElementById(`device-${id}`)) {
         alert("Estação já registrada!");
         return;
     }
@@ -215,19 +227,34 @@ async function loadAll() {
     const container = document.getElementById("devices");
     container.innerHTML = "";
 
-    for (const id of stations) {
-        // Busca inicial via REST (só na primeira carga)
-        try {
-            const ocppRes = await fetch(`/charging/${id}/ocpp/status`);
-            const ocppStatus = ocppRes.ok ? await ocppRes.json() : null;
-
-            const sessionRes = await fetch(`/charging/${id}`);
-            const session = sessionRes.ok ? await sessionRes.json() : null;
-
-            updateDeviceUI(id, ocppStatus, session);
-        } catch (e) {
-            console.warn(`Erro ao carregar ${id}`, e);
+    try {
+        const regRes = await fetch("/charging/ocpp/registered");
+        if (!regRes.ok) {
+            console.warn("Falha ao obter estações registradas", regRes.statusText);
+            return;
         }
+
+        const registered = await regRes.json();
+        if (Array.isArray(registered)) {
+            stations.length = 0;
+            stations.push(...registered);
+        }
+
+        for (const id of stations) {
+            try {
+                const ocppRes = await fetch(`/charging/${id}/ocpp/status`);
+                const ocppStatus = ocppRes.ok ? await ocppRes.json() : null;
+
+                const sessionRes = await fetch(`/charging/${id}`);
+                const session = sessionRes.ok ? await sessionRes.json() : null;
+
+                updateDeviceUI(id, ocppStatus, session);
+            } catch (e) {
+                console.warn(`Erro ao carregar ${id}`, e);
+            }
+        }
+    } catch (e) {
+        console.error("Erro no loadAll:", e);
     }
 }
 

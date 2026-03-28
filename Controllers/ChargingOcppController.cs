@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using EvCharging.Hubs;
 using EvCharging.Models;
 using EvCharging.Services;
 
@@ -7,10 +9,17 @@ namespace EvCharging.Controllers;
 
 [ApiController]
 [Route("charging")]
-public class ChargingOcppController(IChargingOcppService _service) : ControllerBase
+public class ChargingOcppController(IChargingOcppService _service, IHubContext<ChargingHub> hubContext) : ControllerBase
 {
+    [HttpGet("ocpp/registered")]
+    public IActionResult GetRegisteredChargePoints()
+    {
+        var chargePoints = _service.GetAllRegisteredStations();
+        return Ok(chargePoints);
+    }
+
     [HttpPost("{stationId}/ocpp/register")]
-    public IActionResult RegisterOcpp(string stationId, [FromQuery] string vendor, [FromQuery] string model)
+    public async Task<IActionResult> RegisterOcpp(string stationId, [FromQuery] string vendor, [FromQuery] string model)
     {
         if (string.IsNullOrWhiteSpace(stationId))
             return BadRequest("StationId is required.");
@@ -18,6 +27,16 @@ public class ChargingOcppController(IChargingOcppService _service) : ControllerB
         try
         {
             var chargePoint = _service.RegisterOcppChargePoint(stationId, vendor ?? "Unknown", model ?? "Unknown");
+
+            // Notifica todos os clientes conectados via SignalR que uma nova estação foi registrada
+            var ocppStatus = _service.GetOcppStatus(stationId);
+            await hubContext.Clients.All.SendAsync("StationRegistered", new
+            {
+                stationId,
+                ocppStatus,
+                session = (object?)null
+            });
+
             return Ok(chargePoint);
         }
         catch (InvalidOperationException ex)
