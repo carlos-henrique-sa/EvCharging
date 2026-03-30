@@ -30,12 +30,14 @@ public class ChargingOcppController(IChargingOcppService _service, IHubContext<C
 
             // Notifica todos os clientes conectados via SignalR que uma nova estação foi registrada
             var ocppStatus = _service.GetOcppStatus(stationId);
-            await hubContext.Clients.All.SendAsync("StationRegistered", new
-            {
+
+            var stationRegistered = new
+             {
                 stationId,
                 ocppStatus,
                 session = (object?)null
-            });
+            };
+            await hubContext.Clients.All.SendAsync("StationRegistered", stationRegistered);
 
             return Ok(chargePoint);
         }
